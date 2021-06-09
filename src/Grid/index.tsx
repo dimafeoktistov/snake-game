@@ -7,7 +7,6 @@ import {
   LinkedListNode,
   LinkedList,
   Direction,
-  getOppositeDirection,
   getDirectionFromKey,
   getCoordsInDirection,
   isOutOfBounds,
@@ -45,12 +44,17 @@ const Grid: FC<Props> = ({
   score,
   setScore,
 }) => {
+  const maxPossibleCellValue = gridRows * gridCols;
   const board = createBoard(gridRows, gridCols);
-  const snake = new LinkedList(getStartingSnakeLLValue(board));
+  const [snake] = useState<LinkedList>(
+    new LinkedList(getStartingSnakeLLValue(board))
+  );
   const [snakeCells, setSnakeCells] = useState<Set<number>>(
     new Set([snake.head.value.cell])
   );
-  const [foodCell, setFoodCell] = useState<number>(snake.head.value.cell + 5);
+  const [foodCell, setFoodCell] = useState<number>(
+    randomIntFromInterval(1, maxPossibleCellValue)
+  );
   const [direction, setDirection] = useState<string>(Direction.Rigth);
   const [delay, setDelay] = useState<number>(150);
 
@@ -68,13 +72,6 @@ const Grid: FC<Props> = ({
     const newDirection = getDirectionFromKey(e.key);
     const isValidDirection = newDirection !== "";
     if (!isValidDirection) return;
-    const snakeWillRunIntoItself =
-      getOppositeDirection(newDirection) === direction && snakeCells.size > 1;
-    // Note: this functionality is currently broken, for the same reason that
-    // `useInterval` is needed. Specifically, the `direction` and `snakeCells`
-    // will currently never reflect their "latest version" when `handleKeydown`
-    // is called. I leave it as an exercise to the viewer to fix this :P
-    if (snakeWillRunIntoItself) return;
     setDirection(newDirection);
   };
 
@@ -113,13 +110,16 @@ const Grid: FC<Props> = ({
 
     const foodConsumed = nextHeadCell === foodCell;
     if (foodConsumed) {
+      // This function mutates newSnakeCells.
       growSnake(newSnakeCells);
       handleFoodConsumption(newSnakeCells);
+      setDelay(delay - 5);
     }
 
     setSnakeCells(newSnakeCells);
   };
 
+  // This function mutates newSnakeCells.
   const growSnake = (newSnakeCells: Set<number>): void => {
     const growthNodeCoords = getGrowthNodeCoords(snake.tail!, direction);
     if (isOutOfBounds(growthNodeCoords, board)) {
@@ -136,12 +136,10 @@ const Grid: FC<Props> = ({
     snake.tail.next = currentTail;
 
     newSnakeCells.add(newTailCell);
-    // Ускорение
-    // setDelay(delay - 20);
+    setSnakeCells(newSnakeCells);
   };
 
   const handleFoodConsumption = (newSnakeCells: Set<number>): void => {
-    const maxPossibleCellValue = gridRows * gridCols;
     let nextFoodCell;
     while (true) {
       nextFoodCell = randomIntFromInterval(1, maxPossibleCellValue);
@@ -160,11 +158,7 @@ const Grid: FC<Props> = ({
         <div key={rowIndex} className="row">
           {row.map((cell, cellIndex) => {
             const className = getCellClassName(cell, foodCell, snakeCells);
-            return (
-              <div key={cellIndex} className={className}>
-                {cell}
-              </div>
-            );
+            return <div key={cellIndex} className={className}></div>;
           })}
         </div>
       ))}

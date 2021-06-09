@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import Typography from "@material-ui/core/Typography";
+
 import "./App.css";
 
 import Grid from "./Grid";
@@ -12,13 +16,6 @@ enum GameStates {
 }
 
 function App() {
-  // useEffect(() => {
-  //   window.addEventListener("keydown", (e: KeyboardEvent): void => {
-  //     if (e.key === " " && gameState !== GameStates.PLAING) {
-  //       setGameState(GameStates.PLAING);
-  //     }
-  //   });
-  // }, []);
   const [score, setScore] = useState<number>(0);
   const [gridRows, setGridRows] = useState<number>(15);
   const [gridCols, setGridCols] = useState<number>(15);
@@ -33,12 +30,33 @@ function App() {
     setScore(0);
   };
 
+  const handleStartGame = () => {
+    setGameState(GameStates.PLAING);
+  };
+
   const renderStage = (gameState: string): React.ReactNode => {
     switch (gameState) {
       case GameStates.START:
-        return <StartingScreen />;
+        return (
+          <StartingScreen
+            handleStartGame={handleStartGame}
+            gridRows={gridRows}
+            gridCols={gridCols}
+            setGridCols={setGridCols}
+            setGridRows={setGridRows}
+          />
+        );
       case GameStates.GAME_OVER:
-        return <GameOverScreen score={score} />;
+        return (
+          <GameOverScreen
+            score={score}
+            handleResetGame={handleResetGame}
+            gridRows={gridRows}
+            gridCols={gridCols}
+            setGridCols={setGridCols}
+            setGridRows={setGridRows}
+          />
+        );
       case GameStates.PLAING:
         return (
           <Grid
@@ -54,19 +72,12 @@ function App() {
 
   return (
     <div className="App">
-      <header>Snake game</header>
-      <div>
-        {gameState === GameStates.START && (
-          <button onClick={() => setGameState(GameStates.PLAING)}>
-            Start Game
-          </button>
-        )}
-        {gameState === GameStates.GAME_OVER && (
-          <button onClick={handleResetGame}>Reset Game</button>
-        )}
-      </div>
-      <div>Score: {score}</div>
-      {renderStage(gameState)}
+      <AppBar>
+        <Toolbar>
+          <Typography variant="h5">Snake game. Score: {score}</Typography>
+        </Toolbar>
+      </AppBar>
+      <div className="container">{renderStage(gameState)}</div>
     </div>
   );
 }
